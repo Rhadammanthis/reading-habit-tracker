@@ -1,4 +1,55 @@
 {
-  "name": "ReadingHabitTracker",
-  "displayName": "ReadingHabitTracker"
+  "expo": {
+    "name": "Reading Habit Tracker",
+    "slug": "reading-habit-tracker",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "readinghabit",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.readinghabit.tracker",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Used to scan a book's ISBN barcode so we can look it up."
+      }
+    },
+    "android": {
+      "package": "com.readinghabit.tracker",
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/adaptive-icon.png"
+      },
+      "permissions": [
+        "CAMERA",
+        "RECEIVE_BOOT_COMPLETED",
+        "SCHEDULE_EXACT_ALARM"
+      ]
+    },
+    "web": {
+      "bundler": "metro",
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Used to scan a book's ISBN barcode so we can look it up."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#4F6D7A"
+        }
+      ],
+      "expo-secure-store"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
 }

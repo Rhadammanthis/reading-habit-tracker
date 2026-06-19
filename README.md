@@ -1,97 +1,96 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# Reading Habit Tracker
 
-# Getting Started
+A React Native (Expo) app that motivates lapsed readers by turning "finish a book"
+into small, achievable daily goals. Take a reading-speed test, pick a book, set a
+per-day time goal, and the app estimates how many days it'll take — then tracks each
+timed session and celebrates finished books in your Library.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+## Features
 
-## Step 1: Start Metro
+- **Reading-speed test** — timed passage, optionally with a comprehension check
+  (both variants are built behind a flag for later A/B testing).
+- **Add a book** — search Google Books by title/author, scan an ISBN barcode, or
+  enter a book manually. Word counts are estimated from page counts.
+- **Daily sessions** — a timer with pause/resume that fires a local notification
+  when you hit your goal, even if the app is backgrounded.
+- **Progress your way** — after a session, accept the pace estimate or enter the
+  page you actually reached.
+- **Library** — finished books with days, sessions, time read, and pages/words.
+- **Light & dark** themes, daily reminder notifications, and Supabase-backed
+  accounts with cross-device sync.
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+## Tech stack
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+Expo SDK 56 · Expo Router · Supabase (auth + Postgres) · TanStack Query · Zustand ·
+expo-notifications · expo-camera · react-native-svg.
 
-```sh
-# Using npm
-npm start
+## Setup
 
-# OR using Yarn
-yarn start
-```
-
-## Step 2: Build and run your app
-
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
-
-### Android
-
-```sh
-# Using npm
-npm run android
-
-# OR using Yarn
-yarn android
-```
-
-### iOS
-
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
-
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
+### 1. Install dependencies
 
 ```sh
-bundle install
+npm install
 ```
 
-Then, and every time you update your native dependencies, run:
+### 2. Configure Supabase
+
+1. Create a project at [supabase.com](https://supabase.com).
+2. Run the migration in `supabase/migrations/0001_init.sql` (SQL editor or
+   `supabase db push`). It creates the `profiles`, `speed_tests`, `books`, and
+   `sessions` tables with row-level security and an auto-create-profile trigger.
+3. Copy `.env.example` to `.env` and fill in your project URL and anon key:
+
+   ```sh
+   EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+   EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+   # optional, raises Google Books quota:
+   EXPO_PUBLIC_GOOGLE_BOOKS_API_KEY=
+   ```
+
+### 3. Run a development build
+
+Camera (ISBN scanning) and notifications require a **custom dev client** — Expo Go
+won't fully cover them.
 
 ```sh
-bundle exec pod install
+npx expo run:ios      # or: npx expo run:android
 ```
 
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
+For day-to-day JS changes after the first native build:
 
 ```sh
-# Using npm
-npm run ios
-
-# OR using Yarn
-yarn ios
+npx expo start --dev-client
 ```
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+## Quality checks
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+```sh
+npm test          # domain unit tests (estimation + progress logic)
+npm run typecheck # tsc --noEmit
+```
 
-## Step 3: Modify your app
+## Project layout
 
-Now that you have successfully run the app, let's make changes!
+```
+app/                       Expo Router screens
+  (auth)/sign-in.tsx       Supabase email/password
+  (tabs)/                  Today (home), Library, Settings
+  onboarding/speed-test    Reading-speed test
+  add-book.tsx             Search / scan / manual entry
+  session/timer.tsx        Session timer + finish review
+  book/[id].tsx            Finished-book stats
+src/
+  domain/                  Pure estimation + progress logic (unit-tested)
+  services/                Supabase, Google Books, notifications
+  hooks/                   TanStack Query hooks
+  store/                   Zustand session timer
+  theme/                   Tokens + ThemeProvider
+  components/              Shared UI primitives
+supabase/migrations/       Database schema + RLS
+```
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
+## Notes
 
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
-
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+- Notifications are **local only** (goal-reached + daily reminder); no push server.
+- Remote/streak push and the speed-test A/B experiment are intentionally out of
+  scope — hooks/flags are left in place for both.
