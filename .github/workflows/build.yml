@@ -1,0 +1,48 @@
+name: EAS Build
+
+on:
+  pull_request:
+    types: [opened, reopened]
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: Platform to build
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - android
+          - ios
+
+jobs:
+  build:
+    name: Build Preview (${{ github.event.inputs.platform || 'all' }})
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Set up EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build preview
+        run: |
+          eas build \
+            --platform ${{ github.event.inputs.platform || 'all' }} \
+            --profile preview \
+            --non-interactive
+
+      - name: Get build URLs
+        if: success()
+        run: eas build:list --platform ${{ github.event.inputs.platform || 'all' }} --limit 2 --json | jq '[.[] | {platform, status, artifactUrl}]'
