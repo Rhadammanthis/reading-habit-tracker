@@ -42,6 +42,8 @@
     "@types/jest": "^30.0.0",
     "@types/react": "~19.2.2",
     "babel-preset-expo": "^56.0.15",
+    "eslint": "^9.0.0",
+    "eslint-config-expo": "~56.0.4",
     "jest": "^30.4.2",
     "jest-expo": "^56.0.5",
     "ts-jest": "^29.4.11",
@@ -68,7 +70,10 @@
             "esModuleInterop": true,
             "isolatedModules": true,
             "rootDir": ".",
-            "types": ["jest", "node"]
+            "types": [
+              "jest",
+              "node"
+            ]
           }
         }
       ]

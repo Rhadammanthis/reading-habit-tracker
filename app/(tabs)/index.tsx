@@ -14,7 +14,7 @@ import {
 import { ProgressRing } from '@/components/ProgressRing';
 import { BookCover } from '@/components/BookCover';
 import { useTheme } from '@/theme/ThemeProvider';
-import { useActiveBook, useBookSessions } from '@/hooks/useBooks';
+import { useActiveBook, useBookSessions, useQueue } from '@/hooks/useBooks';
 import { useProfile } from '@/hooks/useProfile';
 import { useEffectiveWpm, useLatestSpeedTest } from '@/hooks/useSpeedTest';
 import {
@@ -35,6 +35,8 @@ export default function HomeScreen() {
   const wpm = useEffectiveWpm();
   const { data: activeBook, isLoading: loadingBook, refetch, isRefetching } = useActiveBook();
   const { data: sessions } = useBookSessions(activeBook?.id);
+  const { data: queue } = useQueue();
+  const hasQueue = !!queue && queue.length > 0;
 
   if (!isSupabaseConfigured) {
     return (
@@ -82,10 +84,23 @@ export default function HomeScreen() {
             <Ionicons name="book-outline" size={40} color={theme.colors.textMuted} />
             <ThemedText variant="heading">No book yet</ThemedText>
             <ThemedText muted style={{ textAlign: 'center' }}>
-              Pick a book and a small daily goal. We’ll turn it into a finish-by estimate and track
-              every session.
+              {hasQueue
+                ? 'Start one from your reading list, or add a new book. We’ll turn it into a finish-by estimate and track every session.'
+                : 'Pick a book and a small daily goal. We’ll turn it into a finish-by estimate and track every session.'}
             </ThemedText>
-            <Button title="Add a book" onPress={() => router.push('/add-book')} style={{ alignSelf: 'stretch' }} />
+            {hasQueue ? (
+              <Button
+                title="Pick from your list"
+                onPress={() => router.push('/(tabs)/library')}
+                style={{ alignSelf: 'stretch' }}
+              />
+            ) : null}
+            <Button
+              title="Add a book"
+              variant={hasQueue ? 'secondary' : 'primary'}
+              onPress={() => router.push('/add-book')}
+              style={{ alignSelf: 'stretch' }}
+            />
           </Card>
         ) : (
           <>
@@ -136,6 +151,11 @@ export default function HomeScreen() {
             <Button
               title="Start reading session"
               onPress={() => router.push('/session/timer')}
+            />
+            <Button
+              title={hasQueue ? 'Switch book' : 'Switch or add a book'}
+              variant="ghost"
+              onPress={() => router.push('/(tabs)/library')}
             />
           </>
         )}

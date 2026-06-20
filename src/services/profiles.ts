@@ -13,7 +13,7 @@ import {
 export async function fetchProfile(userId: string): Promise<Profile> {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, display_name, words_per_page, default_goal_minutes, theme_pref')
+    .select('id, display_name, words_per_page, default_goal_minutes, theme_pref, onboarding_step')
     .eq('id', userId)
     .maybeSingle();
 
@@ -26,6 +26,7 @@ export async function fetchProfile(userId: string): Promise<Profile> {
     words_per_page: DEFAULT_WORDS_PER_PAGE,
     default_goal_minutes: DEFAULT_GOAL_MINUTES,
     theme_pref: 'system',
+    onboarding_step: 'name',
   };
   const { error: upsertError } = await supabase.from('profiles').upsert({ id: userId });
   if (upsertError) throw upsertError;
@@ -34,7 +35,12 @@ export async function fetchProfile(userId: string): Promise<Profile> {
 
 export async function updateProfile(
   userId: string,
-  patch: Partial<Pick<Profile, 'display_name' | 'words_per_page' | 'default_goal_minutes' | 'theme_pref'>>,
+  patch: Partial<
+    Pick<
+      Profile,
+      'display_name' | 'words_per_page' | 'default_goal_minutes' | 'theme_pref' | 'onboarding_step'
+    >
+  >,
 ): Promise<void> {
   const { error } = await supabase.from('profiles').update(patch).eq('id', userId);
   if (error) throw error;
