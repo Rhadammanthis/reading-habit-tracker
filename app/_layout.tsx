@@ -27,7 +27,8 @@ function RootNavigator() {
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="onboarding/speed-test" options={{ title: 'Reading speed test' }} />
+        <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+        <Stack.Screen name="speed-test" options={{ title: 'Reading speed test' }} />
         <Stack.Screen name="add-book" options={{ title: 'Add a book', presentation: 'modal' }} />
         <Stack.Screen name="session/timer" options={{ title: 'Reading session' }} />
       </Stack>

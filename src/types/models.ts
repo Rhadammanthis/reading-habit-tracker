@@ -3,10 +3,17 @@
  * These mirror the Supabase tables (snake_case columns) so rows map directly.
  */
 
-export type BookStatus = 'active' | 'finished';
+export type BookStatus = 'queued' | 'active' | 'finished';
 export type ProgressMode = 'estimate' | 'manual';
 export type SpeedTestVariant = 'timed' | 'comprehension';
 export type ThemePref = 'system' | 'light' | 'dark';
+
+/**
+ * Where a user is in first-run onboarding. Each value is the *next* step they
+ * still need to complete; 'done' means fully onboarded. Mirrors the
+ * profiles.onboarding_step column (see migration 0003).
+ */
+export type OnboardingStep = 'name' | 'speed_test' | 'goal' | 'add_book' | 'done';
 
 /** Words assumed per page when a real word count is unavailable. */
 export const DEFAULT_WORDS_PER_PAGE = 275;
@@ -21,6 +28,7 @@ export type Profile = {
   words_per_page: number;
   default_goal_minutes: number;
   theme_pref: ThemePref;
+  onboarding_step: OnboardingStep;
 };
 
 export type SpeedTest = {

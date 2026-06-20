@@ -2,17 +2,19 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { useAuth } from '@/auth/AuthProvider';
 import {
-  createActiveBook,
+  activateBook,
+  createBook,
   deleteBook,
   fetchActiveBook,
   fetchBook,
   fetchLibrary,
+  fetchQueue,
   fetchSessionsForBook,
   insertSession,
   updateBook,
 } from '@/services/books';
 import { applySession, SessionInput } from '@/domain/progress';
-import { Book, BookSearchResult } from '@/types/models';
+import { Book, BookSearchResult, BookStatus } from '@/types/models';
 import { queryKeys } from './queryKeys';
 
 export function useActiveBook() {
@@ -33,6 +35,15 @@ export function useLibrary() {
   });
 }
 
+export function useQueue() {
+  const { userId } = useAuth();
+  return useQuery({
+    queryKey: queryKeys.queue(userId ?? 'anon'),
+    queryFn: () => fetchQueue(userId as string),
+    enabled: !!userId,
+  });
+}
+
 export function useBook(bookId: string | undefined) {
   return useQuery({
     queryKey: queryKeys.book(bookId ?? 'none'),
@@ -49,14 +60,39 @@ export function useBookSessions(bookId: string | undefined) {
   });
 }
 
-export function useStartBook() {
+/**
+ * Add a book to the reading list ('queued') or start it immediately ('active').
+ * Returns the created book so callers can chain a swap (see useActivateBook).
+ */
+export function useAddBook() {
   const { userId } = useAuth();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (args: { book: BookSearchResult; goalMinutesPerDay: number }) =>
-      createActiveBook({ userId: userId as string, ...args }),
+    mutationFn: (args: {
+      book: BookSearchResult;
+      goalMinutesPerDay: number;
+      status: Extract<BookStatus, 'active' | 'queued'>;
+    }) => createBook({ userId: userId as string, ...args }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.activeBook(userId ?? 'anon') });
+      qc.invalidateQueries({ queryKey: queryKeys.queue(userId ?? 'anon') });
+    },
+  });
+}
+
+/**
+ * Make a queued (or paused) book the active one, swapping out whatever book is
+ * currently active — it returns to the reading list with its progress intact.
+ */
+export function useActivateBook() {
+  const { userId } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (bookId: string) => activateBook(bookId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.activeBook(userId ?? 'anon') });
+      qc.invalidateQueries({ queryKey: queryKeys.queue(userId ?? 'anon') });
+      qc.invalidateQueries({ queryKey: ['books', 'detail'] });
     },
   });
 }
@@ -80,6 +116,7 @@ export function useRemoveBook() {
     mutationFn: (bookId: string) => deleteBook(bookId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.activeBook(userId ?? 'anon') });
+      qc.invalidateQueries({ queryKey: queryKeys.queue(userId ?? 'anon') });
       qc.invalidateQueries({ queryKey: queryKeys.library(userId ?? 'anon') });
     },
   });

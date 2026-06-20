@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { Book, BookSearchResult, ReadingSession } from '@/types/models';
+import { Book, BookSearchResult, BookStatus, ReadingSession } from '@/types/models';
 
 const BOOK_COLUMNS =
   'id, user_id, google_books_id, isbn, title, author, cover_url, page_count, word_count_estimate, status, goal_minutes_per_day, current_page, current_word, started_at, finished_at';
@@ -30,17 +30,34 @@ export async function fetchLibrary(userId: string): Promise<Book[]> {
   return (data as Book[]) ?? [];
 }
 
+/** Queued books (the future reading list), most recently added first. */
+export async function fetchQueue(userId: string): Promise<Book[]> {
+  const { data, error } = await supabase
+    .from('books')
+    .select(BOOK_COLUMNS)
+    .eq('user_id', userId)
+    .eq('status', 'queued')
+    .order('started_at', { ascending: false });
+
+  if (error) throw error;
+  return (data as Book[]) ?? [];
+}
+
 export async function fetchBook(bookId: string): Promise<Book | null> {
   const { data, error } = await supabase.from('books').select(BOOK_COLUMNS).eq('id', bookId).maybeSingle();
   if (error) throw error;
   return (data as Book) ?? null;
 }
 
-/** Create the active book from a search result (or manual entry). */
-export async function createActiveBook(args: {
+/**
+ * Create a book from a search result (or manual entry). Pass `status: 'active'`
+ * to start reading immediately, or `'queued'` to add it to the reading list.
+ */
+export async function createBook(args: {
   userId: string;
   book: BookSearchResult;
   goalMinutesPerDay: number;
+  status: Extract<BookStatus, 'active' | 'queued'>;
 }): Promise<Book> {
   const { data, error } = await supabase
     .from('books')
@@ -54,13 +71,22 @@ export async function createActiveBook(args: {
       page_count: args.book.page_count,
       word_count_estimate: args.book.word_count_estimate,
       goal_minutes_per_day: args.goalMinutesPerDay,
-      status: 'active',
+      status: args.status,
     })
     .select(BOOK_COLUMNS)
     .single();
 
   if (error) throw error;
   return data as Book;
+}
+
+/**
+ * Make a queued (or paused) book the active one, atomically demoting whatever
+ * book is currently active back to the queue. See the `activate_book` RPC.
+ */
+export async function activateBook(bookId: string): Promise<void> {
+  const { error } = await supabase.rpc('activate_book', { p_book_id: bookId });
+  if (error) throw error;
 }
 
 /** Update mutable book fields (progress, goal). */
